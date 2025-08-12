@@ -1,0 +1,14 @@
+{
+  "name": "break_forgeting_curve",
+  "version": "1.0.0",
+  "description": "This project is designed to help users combat the Forgetting Curve by utilizing spaced repetition techniques for effective learning.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

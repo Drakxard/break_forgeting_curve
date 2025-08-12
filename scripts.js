@@ -51,6 +51,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Spaced Repetition Data Storage
     const taskData = {}; // Store task info and review dates
 
+    // Load tasks from persistent storage
+    fetch('/tasks')
+        .then(response => response.json())
+        .then(savedTasks => {
+            savedTasks.forEach(info => {
+                const li = document.createElement('li');
+                li.textContent = info.task;
+                todoList.appendChild(li);
+
+                taskData[info.task] = {
+                    lastReviewed: new Date(info.lastReviewed),
+                    interval: info.interval,
+                    retention: info.retention
+                };
+
+                progressChart.data.labels.push(formatDate(new Date(info.lastReviewed)));
+                progressChart.data.datasets[0].data.push(info.retention);
+
+                calendar.addEvent({
+                    title: info.task,
+                    start: new Date(info.lastReviewed).toISOString().split('T')[0],
+                    allDay: true
+                });
+            });
+            progressChart.update();
+        })
+        .catch(err => console.error('Error loading tasks:', err));
+
     // Add a new task
     todoForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -80,12 +108,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             taskInput.value = '';
+            saveTasksToServer();
         }
     });
 
     // Function to format date as YYYY-MM-DD
     function formatDate(date) {
         return date.toISOString().split('T')[0];
+    }
+
+    function saveTasksToServer() {
+        const tasks = Object.keys(taskData).map(task => ({
+            task: task,
+            lastReviewed: taskData[task].lastReviewed,
+            interval: taskData[task].interval,
+            retention: taskData[task].retention
+        }));
+
+        fetch('/tasks', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(tasks)
+        }).catch(err => console.error('Error saving tasks:', err));
     }
 
     // Function to update retention and set next review
@@ -116,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         taskInfo.retention = 90; // Reset retention to 90% after review
         progressChart.data.datasets[0].data.push(taskInfo.retention);
         progressChart.update();
+        saveTasksToServer();
     }
 
     // Example of adding repetition for demo purpose
@@ -145,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (chartUpdated) {
             progressChart.update();
+            saveTasksToServer();
         }
     }, 10000); // Update retention and date every 10 seconds for demo purposes
 });
